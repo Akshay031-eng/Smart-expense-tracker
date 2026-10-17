@@ -1,0 +1,83 @@
+<%- include('../partials/top') %>
+<div class="mx-auto max-w-xl">
+  <a href="<%= values.returnTo %>" class="link text-sm">Back</a>
+  <h1 class="heading-display mt-3 text-3xl" data-form-title><%= title %></h1>
+
+  <form action="<%= mode === 'edit' ? `/transactions/${id}` : '/transactions' %>" method="post" class="sheet mt-6 p-6 sm:p-7"
+        data-transaction-form data-mode="<%= mode %>" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="returnTo" value="<%= values.returnTo %>">
+    <% if (mode === 'edit') { %><input type="hidden" name="_method" value="PUT"><% } %>
+
+    <fieldset>
+      <legend class="label">Type</legend>
+      <div class="grid grid-cols-2 gap-2">
+        <% [['expense', 'Expense'], ['income', 'Income']].forEach(([value, text]) => { %>
+          <label class="relative cursor-pointer">
+            <input type="radio" name="type" value="<%= value %>" class="peer sr-only" <%= values.type === value ? 'checked' : '' %>>
+            <span class="block rounded-lg border border-rule px-4 py-2.5 text-center text-sm font-semibold text-ink-soft peer-checked:border-ink peer-checked:bg-ink peer-checked:text-sheet peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus"><%= text %></span>
+          </label>
+        <% }) %>
+      </div>
+      <% if (errors.type) { %><p class="field-error"><%= errors.type %></p><% } %>
+    </fieldset>
+
+    <label for="amount" class="label mt-5">Amount</label>
+    <div class="relative">
+      <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-soft"><%= currencySymbol %></span>
+      <input id="amount" name="amount" type="text" inputmode="decimal" autocomplete="off" required placeholder="0.00"
+        value="<%= values.amount %>" class="field amount pl-9 text-lg font-semibold <%= errors.amount ? 'field-invalid' : '' %>"
+        <%- errors.amount ? 'aria-invalid="true" aria-describedby="amount-error"' : '' %> <%= mode === 'new' ? 'autofocus' : '' %>>
+    </div>
+    <% if (errors.amount) { %><p id="amount-error" class="field-error"><%= errors.amount %></p><% } %>
+
+    <div class="mt-5 grid gap-5 sm:grid-cols-2">
+      <div>
+        <label for="category" class="label">Category</label>
+        <select id="category" name="category" required class="field <%= errors.category ? 'field-invalid' : '' %>"
+          <%- errors.category ? 'aria-invalid="true" aria-describedby="category-error"' : '' %>>
+          <option value="">Choose a category</option>
+          <optgroup label="Expense categories" data-type="expense">
+            <% expenseCategories.forEach((c) => { %><option value="<%= c.id %>" <%= values.category === c.id ? 'selected' : '' %>><%= c.label %></option><% }) %>
+          </optgroup>
+          <optgroup label="Income categories" data-type="income">
+            <% incomeCategories.forEach((c) => { %><option value="<%= c.id %>" <%= values.category === c.id ? 'selected' : '' %>><%= c.label %></option><% }) %>
+          </optgroup>
+        </select>
+        <% if (errors.category) { %><p id="category-error" class="field-error"><%= errors.category %></p><% } %>
+      </div>
+      <div>
+        <label for="date" class="label">Date</label>
+        <input id="date" name="date" type="date" required value="<%= values.date %>" class="field <%= errors.date ? 'field-invalid' : '' %>"
+          <%- errors.date ? 'aria-invalid="true" aria-describedby="date-error"' : '' %>>
+        <% if (errors.date) { %><p id="date-error" class="field-error"><%= errors.date %></p><% } %>
+      </div>
+    </div>
+
+    <label for="paymentMethod" class="label mt-5">Paid with</label>
+    <select id="paymentMethod" name="paymentMethod" class="field <%= errors.paymentMethod ? 'field-invalid' : '' %>">
+      <% paymentMethods.forEach((m) => { %><option value="<%= m.id %>" <%= values.paymentMethod === m.id ? 'selected' : '' %>><%= m.label %></option><% }) %>
+    </select>
+    <% if (errors.paymentMethod) { %><p class="field-error"><%= errors.paymentMethod %></p><% } %>
+
+    <label for="description" class="label mt-5">Note <span class="font-normal text-ink-soft">(optional)</span></label>
+    <input id="description" name="description" type="text" maxlength="120" value="<%= values.description %>" placeholder="e.g. Lunch with team"
+      class="field <%= errors.description ? 'field-invalid' : '' %>">
+    <% if (errors.description) { %><p class="field-error"><%= errors.description %></p><% } %>
+
+    <div class="mt-7 flex flex-wrap items-center gap-3">
+      <button class="btn btn-primary px-5" data-submit-label><%= mode === 'edit' ? 'Save changes' : values.type === 'income' ? 'Save income' : 'Save expense' %></button>
+      <a href="<%= values.returnTo %>" class="btn btn-quiet">Cancel</a>
+    </div>
+  </form>
+
+  <% if (mode === 'edit') { %>
+    <form action="/transactions/<%= id %>" method="post" class="mt-4 flex justify-end" data-confirm="Delete this transaction? This can't be undone.">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="_method" value="DELETE">
+      <input type="hidden" name="returnTo" value="<%= values.returnTo %>">
+      <button class="btn btn-danger"><%- include('../partials/icon', { name: 'trash', cls: 'h-4 w-4' }) %>Delete transaction</button>
+    </form>
+  <% } %>
+</div>
+<%- include('../partials/bottom') %>

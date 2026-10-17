@@ -1,0 +1,21 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and caches
+node_modules/
+.npm/
+coverage/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Note: public/css/app.css is committed on purpose (pre-built Tailwind CSS),
+# so the app runs and deploys without a CSS build step.

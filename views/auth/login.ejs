@@ -1,0 +1,33 @@
+<%- include('../partials/top') %>
+<div class="mx-auto max-w-md">
+  <h1 class="heading-display text-3xl">Sign in</h1>
+  <p class="mt-2 text-ink-soft">Welcome back. Pick up where you left off.</p>
+
+  <form action="/login" method="post" class="sheet mt-6 p-6 sm:p-7" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (errors.form) { %>
+      <p class="mb-5 rounded-lg border border-debit/40 px-3 py-2.5 text-sm font-medium text-debit" role="alert"><%= errors.form %></p>
+    <% } %>
+
+    <label for="email" class="label">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" required value="<%= values.email || '' %>"
+      class="field <%= errors.email ? 'field-invalid' : '' %>" <%- errors.email ? 'aria-invalid="true" aria-describedby="email-error"' : '' %>>
+    <% if (errors.email) { %><p id="email-error" class="field-error"><%= errors.email %></p><% } %>
+
+    <label for="password" class="label mt-5">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required
+      class="field <%= errors.password ? 'field-invalid' : '' %>" <%- errors.password ? 'aria-invalid="true" aria-describedby="password-error"' : '' %>>
+    <% if (errors.password) { %><p id="password-error" class="field-error"><%= errors.password %></p><% } %>
+
+    <button class="btn btn-primary mt-6 w-full py-3">Sign in</button>
+  </form>
+
+  <% if (demoEnabled) { %>
+    <form action="/demo" method="post" class="mt-4">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-quiet w-full py-3">Try the demo account</button>
+    </form>
+  <% } %>
+  <p class="mt-6 text-center text-sm text-ink-soft">New here? <a href="/register" class="link">Create an account</a></p>
+</div>
+<%- include('../partials/bottom') %>

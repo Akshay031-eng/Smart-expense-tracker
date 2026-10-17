@@ -1,0 +1,43 @@
+<%- include('partials/top') %>
+<h1 class="heading-display text-3xl sm:text-4xl">Settings</h1>
+
+<div class="mt-6 grid gap-6 lg:grid-cols-2">
+  <form action="/settings/profile" method="post" class="sheet p-6 sm:p-7" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="_method" value="PUT">
+    <h2 class="heading-display text-lg">Profile</h2>
+
+    <label for="name" class="label mt-5">Name</label>
+    <input id="name" name="name" value="<%= values.name %>" autocomplete="name" class="field <%= errors.name ? 'field-invalid' : '' %>">
+    <% if (errors.name) { %><p class="field-error"><%= errors.name %></p><% } %>
+
+    <label for="email" class="label mt-5">Email</label>
+    <input id="email" value="<%= currentUser.email %>" class="field opacity-70" disabled>
+    <p class="hint">Your email is your sign-in name and can't be changed here.</p>
+
+    <label for="currency" class="label mt-5">Currency</label>
+    <select id="currency" name="currency" class="field <%= errors.currency ? 'field-invalid' : '' %>">
+      <% currencies.forEach((c) => { %><option value="<%= c.code %>" <%= values.currency === c.code ? 'selected' : '' %>><%= c.label %></option><% }) %>
+    </select>
+    <p class="hint">Changes how amounts are shown. Existing amounts are not converted.</p>
+
+    <button class="btn btn-primary mt-6">Save profile</button>
+  </form>
+
+  <form action="/settings/password" method="post" class="sheet p-6 sm:p-7" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="_method" value="PUT">
+    <h2 class="heading-display text-lg">Password</h2>
+    <% [
+      { name: 'currentPassword', label: 'Current password', autocomplete: 'current-password' },
+      { name: 'newPassword', label: 'New password', autocomplete: 'new-password', hint: 'At least 8 characters.' },
+      { name: 'confirmPassword', label: 'Confirm new password', autocomplete: 'new-password' },
+    ].forEach((f) => { %>
+      <label for="<%= f.name %>" class="label mt-5"><%= f.label %></label>
+      <input id="<%= f.name %>" name="<%= f.name %>" type="password" autocomplete="<%= f.autocomplete %>" class="field <%= errors[f.name] ? 'field-invalid' : '' %>">
+      <% if (errors[f.name]) { %><p class="field-error"><%= errors[f.name] %></p><% } else if (f.hint) { %><p class="hint"><%= f.hint %></p><% } %>
+    <% }) %>
+    <button class="btn btn-primary mt-6">Change password</button>
+  </form>
+</div>
+<%- include('partials/bottom') %>

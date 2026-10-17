@@ -1,0 +1,202 @@
+<%- include('partials/top', { withCharts: true }) %>
+<% const d = dashboard;
+   const statusColor = { ok: 'bg-ink', warning: 'bg-caution', over: 'bg-debit' };
+   const overall = d.budgets.find((b) => b.category === 'overall');
+   const categoryBudgets = d.budgets.filter((b) => b.category !== 'overall');
+   const range = (() => { const [y, m] = d.monthKey.split('-').map(Number); const last = new Date(Date.UTC(y, m, 0)).getUTCDate(); return { from: `${d.monthKey}-01`, to: `${d.monthKey}-${String(last).padStart(2, '0')}` }; })();
+   const levelBar = { danger: 'bg-debit', warning: 'bg-caution', good: 'bg-credit', info: 'bg-rule-strong' };
+%>
+
+<div class="flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <div class="flex items-center gap-2">
+      <a href="/dashboard?month=<%= d.prevMonthKey %>" class="btn btn-quiet btn-sm px-2" aria-label="Previous month"><%- include('partials/icon', { name: 'chevronLeft', cls: 'h-4 w-4' }) %></a>
+      <h1 class="heading-display text-3xl sm:text-4xl"><%= d.monthLabel %></h1>
+      <% if (d.nextMonthKey) { %>
+        <a href="/dashboard?month=<%= d.nextMonthKey %>" class="btn btn-quiet btn-sm px-2" aria-label="Next month"><%- include('partials/icon', { name: 'chevronRight', cls: 'h-4 w-4' }) %></a>
+      <% } %>
+    </div>
+    <p class="mt-1.5 text-sm text-ink-soft">
+      <%= d.isCurrentMonth ? `Day ${d.daysElapsed} of ${d.daysInMonth}` : 'Full month' %>,
+      <%= d.count %> transaction<%= d.count === 1 ? '' : 's' %>
+      <% if (!d.isCurrentMonth) { %><a href="/dashboard" class="link ml-2">Back to this month</a><% } %>
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="/transactions/new?returnTo=/dashboard" class="btn btn-primary"><%- include('partials/icon', { name: 'plus', cls: 'h-4 w-4' }) %>Add expense</a>
+    <a href="/transactions/new?type=income&returnTo=/dashboard" class="btn btn-quiet">Add income</a>
+  </div>
+</div>
+
+<%# The budget strip: the one thing to read first. %>
+<section class="sheet mt-6 p-5 sm:p-7" aria-labelledby="budget-heading">
+  <% if (overall) { %>
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 id="budget-heading" class="text-sm font-medium text-ink-soft">Monthly budget</h2>
+      <% if (d.forecast !== null) { %>
+        <p class="text-sm text-ink-soft">Forecast for the month: <span class="amount font-semibold <%= d.forecast > overall.limit ? 'text-debit' : 'text-ink' %>"><%= money(d.forecast) %></span></p>
+      <% } %>
+    </div>
+    <p class="mt-2 font-display text-4xl font-semibold tracking-tight amount sm:text-5xl">
+      <%= money(overall.spent) %> <span class="text-base font-normal text-ink-soft sm:text-lg">of <%= money(overall.limit) %></span>
+    </p>
+    <div class="relative mt-5">
+      <div class="meter h-3" role="progressbar" aria-label="Budget used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= Math.min(overall.percent, 100) %>">
+        <div class="meter-fill <%= statusColor[overall.status] %>" data-width="<%= overall.percent %>"></div>
+      </div>
+      <% if (d.isCurrentMonth) { %>
+        <div class="absolute -top-1.5 h-6 w-0.5 rounded bg-caution" data-left="<%= (d.daysElapsed / d.daysInMonth) * 100 %>" title="Even pace for today"></div>
+      <% } %>
+    </div>
+    <p class="mt-4 leading-relaxed">
+      <% const daysRemaining = d.daysInMonth - d.daysElapsed + 1; %>
+      <% if (overall.remaining < 0) { %>
+        <strong class="text-debit"><%= money(-overall.remaining) %> over budget</strong> this month.
+      <% } else if (d.isCurrentMonth) { %>
+        <%= money(overall.remaining) %> left for <%= daysRemaining %> day<%= daysRemaining === 1 ? '' : 's' %>, about <strong><%= money(Math.floor(overall.remaining / daysRemaining / 100) * 100) %> a day</strong>.
+      <% } else { %>
+        Finished the month with <strong><%= money(overall.remaining) %></strong> of the budget unspent.
+      <% } %>
+      <span class="text-sm text-ink-soft">The orange mark shows where an even pace would be today.</span>
+    </p>
+  <% } else { %>
+    <h2 id="budget-heading" class="text-sm font-medium text-ink-soft">Spent <%= d.isCurrentMonth ? 'so far' : 'this month' %></h2>
+    <p class="mt-2 font-display text-4xl font-semibold tracking-tight amount"><%= money(d.totals.expense) %></p>
+    <p class="mt-3 text-ink-soft">Set a monthly budget to get a daily spending allowance and early warnings. <a href="/budgets" class="link">Set a budget</a></p>
+  <% } %>
+</section>
+
+<%# Ledger summary row %>
+<section class="sheet mt-4 grid grid-cols-2 divide-rule md:grid-cols-4 md:divide-x" aria-label="Month summary">
+  <div class="border-b border-rule p-5 md:border-b-0">
+    <p class="text-sm text-ink-soft">Income</p>
+    <p class="mt-1 font-display text-2xl font-semibold text-credit amount"><%= money(d.totals.income) %></p>
+  </div>
+  <div class="border-b border-l border-rule p-5 md:border-b-0 md:border-l-0">
+    <p class="text-sm text-ink-soft">Expenses</p>
+    <p class="mt-1 font-display text-2xl font-semibold amount"><%= money(d.totals.expense) %></p>
+    <% if (d.prevExpense) { %><p class="mt-1 text-xs text-ink-soft"><%= d.isCurrentMonth ? 'Same days last month' : 'Previous month' %>: <span class="amount"><%= money(d.prevExpense) %></span></p><% } %>
+  </div>
+  <div class="p-5">
+    <p class="text-sm text-ink-soft">Net</p>
+    <p class="mt-1 font-display text-2xl font-semibold amount <%= d.totals.net < 0 ? 'text-debit' : '' %>"><%= d.totals.net < 0 ? '−' : '' %><%= money(Math.abs(d.totals.net)) %></p>
+  </div>
+  <div class="border-l border-rule p-5 md:border-l-0">
+    <p class="text-sm text-ink-soft">Savings rate</p>
+    <p class="mt-1 font-display text-2xl font-semibold amount"><%= d.savingsRate === null ? '–' : `${d.savingsRate}%` %></p>
+    <% if (d.savingsRate === null) { %><p class="mt-1 text-xs text-ink-soft">No income recorded</p><% } %>
+  </div>
+</section>
+
+<div class="mt-6 grid gap-6 lg:grid-cols-3">
+  <section class="sheet flex flex-col p-5 sm:p-6 lg:col-span-2" aria-labelledby="pace-heading">
+    <h2 id="pace-heading" class="heading-display text-lg">Spending through the month</h2>
+    <p class="mt-1 text-sm text-ink-soft">Running total of expenses<%= d.overallBudget ? '; the dashed line is an even pace to your budget' : '' %>.</p>
+    <div class="relative mt-4 h-64 lg:h-auto lg:min-h-64 lg:flex-1"><canvas id="pace-chart" aria-label="Running total of spending by day"></canvas></div>
+  </section>
+
+  <section class="sheet p-5 sm:p-6" aria-labelledby="insights-heading">
+    <h2 id="insights-heading" class="heading-display text-lg">Insights</h2>
+    <ul class="mt-4 flex flex-col gap-4">
+      <% d.insights.forEach((insight) => { %>
+        <li class="flex gap-3">
+          <span class="mt-1 w-1 shrink-0 self-stretch rounded-full <%= levelBar[insight.level] %>" aria-hidden="true"></span>
+          <div>
+            <p class="text-sm font-semibold"><span class="sr-only"><%= insight.level === 'danger' ? 'Alert: ' : insight.level === 'warning' ? 'Warning: ' : '' %></span><%= insight.title %></p>
+            <p class="mt-0.5 text-sm leading-relaxed text-ink-soft"><%= insight.text %></p>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+</div>
+
+<div class="mt-6 grid gap-6 lg:grid-cols-2">
+  <section class="sheet p-5 sm:p-6" aria-labelledby="categories-heading">
+    <h2 id="categories-heading" class="heading-display text-lg">Where the money went</h2>
+    <% if (d.categories.length) { %>
+      <div class="mt-4 grid items-center gap-6 sm:grid-cols-[180px_1fr]">
+        <div class="relative mx-auto h-44 w-44"><canvas id="category-chart" aria-label="Spending by category"></canvas></div>
+        <table class="w-full text-sm">
+          <caption class="sr-only">Spending by category</caption>
+          <tbody>
+            <% d.categories.slice(0, 7).forEach((c) => { %>
+              <tr class="border-b border-rule last:border-0">
+                <td class="py-2 pr-2"><span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full <%= c.info.dot %>"></span><%= c.info.label %></span></td>
+                <td class="py-2 text-right amount"><%= money(c.total) %></td>
+                <td class="w-12 py-2 text-right text-ink-soft amount"><%= c.share %>%</td>
+              </tr>
+            <% }) %>
+          </tbody>
+          <tfoot>
+            <tr class="total-rule">
+              <td class="pt-2 font-semibold">Total</td>
+              <td class="pt-2 text-right font-semibold amount"><%= money(d.totals.expense) %></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    <% } else { %>
+      <p class="mt-4 text-sm text-ink-soft">No expenses <%= d.isCurrentMonth ? 'yet this month' : 'in this month' %>.</p>
+    <% } %>
+  </section>
+
+  <section class="sheet p-5 sm:p-6" aria-labelledby="trend-heading">
+    <h2 id="trend-heading" class="heading-display text-lg">Last 6 months</h2>
+    <p class="mt-1 text-sm text-ink-soft">Income and expenses per month.</p>
+    <div class="relative mt-4 h-56"><canvas id="trend-chart" aria-label="Income and expenses for the last six months"></canvas></div>
+  </section>
+</div>
+
+<% if (categoryBudgets.length) { %>
+  <section class="sheet mt-6 p-5 sm:p-6" aria-labelledby="cat-budgets-heading">
+    <div class="flex items-baseline justify-between gap-4">
+      <h2 id="cat-budgets-heading" class="heading-display text-lg">Category budgets</h2>
+      <a href="/budgets" class="link text-sm">Manage budgets</a>
+    </div>
+    <ul class="mt-4 grid gap-x-8 gap-y-5 md:grid-cols-2">
+      <% categoryBudgets.forEach((b) => { %>
+        <li>
+          <div class="flex items-baseline justify-between gap-3 text-sm">
+            <span class="inline-flex items-center gap-2 font-medium"><span class="h-2.5 w-2.5 rounded-full <%= b.info.dot %>"></span><%= b.info.label %></span>
+            <span class="amount <%= b.status === 'over' ? 'font-semibold text-debit' : 'text-ink-soft' %>"><%= money(b.spent) %> of <%= money(b.limit) %></span>
+          </div>
+          <div class="meter mt-2"><div class="meter-fill <%= statusColor[b.status] %>" data-width="<%= b.percent %>"></div></div>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+<% } %>
+
+<section class="sheet mt-6 overflow-hidden" aria-labelledby="recent-heading">
+  <div class="flex items-baseline justify-between gap-4 p-5 pb-3 sm:px-6">
+    <h2 id="recent-heading" class="heading-display text-lg">Recent transactions</h2>
+    <a href="/transactions?from=<%= range.from %>&to=<%= range.to %>" class="link text-sm">See all for <%= monthLabel(d.monthKey, { short: true, withYear: false }) %></a>
+  </div>
+  <% if (d.recent.length) { %>
+    <div class="overflow-x-auto">
+      <table class="ledger w-full">
+        <thead><tr><th class="sm:pl-6">Date</th><th>Description</th><th class="hidden sm:table-cell">Category</th><th class="text-right sm:pr-6">Amount</th></tr></thead>
+        <tbody>
+          <% d.recent.forEach((t) => { %>
+            <tr>
+              <td class="whitespace-nowrap text-ink-soft sm:pl-6"><%= formatDate(t.date) %></td>
+              <td><%= t.description || category(t.category).label %></td>
+              <td class="hidden sm:table-cell"><span class="inline-flex items-center gap-2 text-ink-soft"><span class="h-2 w-2 rounded-full <%= category(t.category).dot %>"></span><%= category(t.category).label %></span></td>
+              <td class="text-right sm:pr-6"><%- include('partials/tx-amount', { t }) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="px-5 pb-6 sm:px-6">
+      <p class="text-sm text-ink-soft">Nothing recorded <%= d.isCurrentMonth ? 'yet this month' : 'in this month' %>.</p>
+      <% if (d.isCurrentMonth) { %><a href="/transactions/new?returnTo=/dashboard" class="btn btn-primary mt-4">Add your first expense</a><% } %>
+    </div>
+  <% } %>
+</section>
+
+<script type="application/json" id="dashboard-data"><%- JSON.stringify(d.charts).replace(/</g, '\\u003c') %></script>
+<%- include('partials/bottom') %>

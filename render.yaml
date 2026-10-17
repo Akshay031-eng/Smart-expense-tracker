@@ -1,0 +1,20 @@
+# Render Blueprint: Render -> New -> Blueprint -> pick this repo.
+# You only need to paste MONGODB_URI; SESSION_SECRET is generated for you.
+services:
+  - type: web
+    name: smart-expense-tracker
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: APP_TIMEZONE
+        value: Asia/Kolkata

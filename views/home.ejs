@@ -1,0 +1,62 @@
+<%- include('partials/top') %>
+<section class="grid items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
+  <div>
+    <h1 class="heading-display text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">Know where every rupee goes.</h1>
+    <p class="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
+      Log an expense in seconds, set a monthly limit for each category, and see every day how much you can still spend.
+      Smart Expense tells you in plain words when a budget is slipping.
+    </p>
+    <div class="mt-8 flex flex-wrap items-center gap-3">
+      <% if (demoEnabled) { %>
+        <form action="/demo" method="post">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-primary px-5 py-3 text-base">Try the demo</button>
+        </form>
+      <% } %>
+      <a href="/register" class="btn btn-quiet px-5 py-3 text-base">Create a free account</a>
+    </div>
+    <p class="mt-4 text-sm text-ink-soft">The demo opens a ready-made account with four months of sample data. No sign-up needed.</p>
+  </div>
+
+  <%# The product's core idea, shown as it appears on the dashboard (sample numbers). %>
+  <figure class="sheet p-6 sm:p-7" aria-label="Example of the monthly budget view">
+    <div class="flex items-baseline justify-between gap-4">
+      <p class="text-sm font-medium text-ink-soft">October budget</p>
+      <p class="text-sm text-ink-soft">Day 17 of 31</p>
+    </div>
+    <p class="mt-2 font-display text-4xl font-semibold tracking-tight amount">₹38,420 <span class="text-base font-normal text-ink-soft">of ₹60,000</span></p>
+    <div class="relative mt-5">
+      <div class="meter h-3"><div class="meter-fill bg-ink" data-width="64"></div></div>
+      <div class="absolute -top-1.5 h-6 w-0.5 rounded bg-caution" data-left="55" title="Where you'd be if you spent evenly"></div>
+    </div>
+    <p class="mt-4 text-[0.95rem] leading-relaxed">₹21,580 left for 15 days, about <strong>₹1,438 a day</strong>.</p>
+    <div class="mt-6 border-t border-rule pt-4">
+      <p class="flex gap-3 text-sm"><span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-caution"></span><span><strong>Shopping budget 86% used.</strong> ₹6,880 of ₹8,000 spent; ₹1,120 left for the next 15 days.</span></p>
+      <p class="mt-3 flex gap-3 text-sm"><span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-credit"></span><span><strong>Spending is down.</strong> You've spent 18% less than in the same days last month.</span></p>
+    </div>
+    <figcaption class="sr-only">Sample: 38,420 rupees spent of a 60,000 budget on day 17, with two insights.</figcaption>
+  </figure>
+</section>
+
+<section class="mt-20 border-t border-rule pt-10" aria-labelledby="features">
+  <h2 id="features" class="heading-display text-2xl">What it does</h2>
+  <div class="mt-6 grid gap-8 sm:grid-cols-3">
+    <div>
+      <h3 class="font-semibold">Budgets that warn you early</h3>
+      <p class="mt-2 text-sm leading-relaxed text-ink-soft">Set a limit for the month and for each category. You'll see a warning at 80%, and a daily amount that keeps you on track.</p>
+    </div>
+    <div>
+      <h3 class="font-semibold">Insights in plain words</h3>
+      <p class="mt-2 text-sm leading-relaxed text-ink-soft">A month-end forecast, a comparison with last month, and a heads-up when one category is far above its usual level.</p>
+    </div>
+    <div>
+      <h3 class="font-semibold">Your data, your file</h3>
+      <p class="mt-2 text-sm leading-relaxed text-ink-soft">Search and filter every transaction, then export exactly what you see to a CSV file for Excel or Google Sheets.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="mt-20 border-t border-rule pt-6 text-sm text-ink-soft">
+  Built with Node.js, Express, MongoDB, EJS and Tailwind CSS.
+</footer>
+<%- include('partials/bottom') %>

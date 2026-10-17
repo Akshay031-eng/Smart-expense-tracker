@@ -1,0 +1,33 @@
+<%- include('../partials/top') %>
+<div class="mx-auto max-w-md">
+  <h1 class="heading-display text-3xl">Create your account</h1>
+  <p class="mt-2 text-ink-soft">Free, private, and takes less than a minute.</p>
+
+  <form action="/register" method="post" class="sheet mt-6 p-6 sm:p-7" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (errors.form) { %>
+      <p class="mb-5 rounded-lg border border-debit/40 px-3 py-2.5 text-sm font-medium text-debit" role="alert"><%= errors.form %></p>
+    <% } %>
+    <% const fields = [
+      { name: 'name', label: 'Name', type: 'text', autocomplete: 'name' },
+      { name: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
+      { name: 'password', label: 'Password', type: 'password', autocomplete: 'new-password', hint: 'At least 8 characters.' },
+      { name: 'confirmPassword', label: 'Confirm password', type: 'password', autocomplete: 'new-password' },
+    ]; %>
+    <% fields.forEach((f, i) => { %>
+      <label for="<%= f.name %>" class="label <%= i ? 'mt-5' : '' %>"><%= f.label %></label>
+      <input id="<%= f.name %>" name="<%= f.name %>" type="<%= f.type %>" autocomplete="<%= f.autocomplete %>" required
+        value="<%= f.type === 'password' ? '' : (values[f.name] || '') %>"
+        class="field <%= errors[f.name] ? 'field-invalid' : '' %>" <%- errors[f.name] ? `aria-invalid="true" aria-describedby="${f.name}-error"` : '' %>>
+      <% if (errors[f.name]) { %>
+        <p id="<%= f.name %>-error" class="field-error"><%= errors[f.name] %></p>
+      <% } else if (f.hint) { %>
+        <p class="hint"><%= f.hint %></p>
+      <% } %>
+    <% }) %>
+
+    <button class="btn btn-primary mt-6 w-full py-3">Create account</button>
+  </form>
+  <p class="mt-6 text-center text-sm text-ink-soft">Already have an account? <a href="/login" class="link">Sign in</a></p>
+</div>
+<%- include('../partials/bottom') %>

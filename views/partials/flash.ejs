@@ -1,0 +1,10 @@
+<% const messages = flash; %>
+<% if (messages.length) { %>
+  <div class="mb-6 flex flex-col gap-2" role="status" aria-live="polite">
+    <% messages.forEach((m) => {
+      const tone = m.type === 'error' ? 'border-debit/40 text-debit' : m.type === 'success' ? 'border-credit/40 text-credit' : 'border-rule-strong/50 text-ink';
+    %>
+      <p class="rounded-lg border bg-sheet px-4 py-3 text-sm font-medium <%= tone %>"><%= m.message %></p>
+    <% }) %>
+  </div>
+<% } %>

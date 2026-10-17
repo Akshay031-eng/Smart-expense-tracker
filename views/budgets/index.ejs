@@ -1,0 +1,101 @@
+<%- include('../partials/top') %>
+<% const statusColor = { ok: 'bg-ink', warning: 'bg-caution', over: 'bg-debit', none: 'bg-rule' };
+   const statusText = (row) => row.status === 'over' ? `${money(row.spent - row.limit)} over` : row.status === 'none' ? 'No limit' : `${money(row.limit - row.spent)} left`; %>
+
+<h1 class="heading-display text-3xl sm:text-4xl">Budgets</h1>
+<p class="mt-1.5 max-w-2xl text-sm text-ink-soft">
+  Limits repeat every month. Spending below is for <%= monthLabel %>, with <%= daysLeft %> day<%= daysLeft === 1 ? '' : 's' %> to go.
+  You'll get a warning on the dashboard at 80% of a limit.
+</p>
+
+<%# Overall monthly budget %>
+<section class="sheet mt-6 p-5 sm:p-7" aria-labelledby="overall-heading">
+  <div class="grid gap-6 md:grid-cols-[1fr_320px] md:items-end">
+    <div>
+      <h2 id="overall-heading" class="heading-display text-lg">Overall monthly budget</h2>
+      <p class="mt-1 text-sm text-ink-soft">The most you want to spend in a month across all categories.</p>
+      <% if (overall.limit) { %>
+        <p class="mt-4 font-display text-3xl font-semibold tracking-tight amount"><%= money(overall.spent) %> <span class="text-base font-normal text-ink-soft">of <%= money(overall.limit) %></span></p>
+        <div class="meter mt-3 h-3"><div class="meter-fill <%= statusColor[overall.status] %>" data-width="<%= overall.percent %>"></div></div>
+        <p class="mt-2 text-sm <%= overall.status === 'over' ? 'font-semibold text-debit' : 'text-ink-soft' %>"><%= overall.percent %>% used, <%= statusText(overall) %></p>
+      <% } else { %>
+        <p class="mt-4 text-sm">Spent this month: <span class="amount font-semibold"><%= money(overall.spent) %></span></p>
+      <% } %>
+    </div>
+    <div>
+      <form action="/budgets" method="post" class="flex items-end gap-2">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="category" value="overall">
+        <div class="flex-1">
+          <label for="limit-overall" class="label">Monthly limit</label>
+          <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-soft"><%= currencySymbol %></span>
+            <input id="limit-overall" name="limit" inputmode="decimal" required value="<%= overall.limit ? minorToInput(overall.limit).replace(/\.00$/, '') : '' %>"
+              placeholder="e.g. 40000" class="field amount pl-9 <%= errors.overall ? 'field-invalid' : '' %>">
+          </div>
+        </div>
+        <button class="btn btn-primary">Save</button>
+      </form>
+      <% if (errors.overall) { %><p class="field-error"><%= errors.overall %></p><% } %>
+      <% if (overall.limit) { %>
+        <form action="/budgets/overall" method="post" class="mt-2 text-right" data-confirm="Remove the overall monthly budget?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="_method" value="DELETE">
+          <button class="text-sm font-medium text-ink-soft underline underline-offset-4 hover:text-debit">Remove limit</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+  <% if (overall.limit && categoryLimitTotal > overall.limit) { %>
+    <p class="mt-5 border-t border-rule pt-4 text-sm text-caution">Your category limits add up to <span class="amount font-semibold"><%= money(categoryLimitTotal) %></span>, more than the overall budget.</p>
+  <% } %>
+</section>
+
+<%# Per-category budgets %>
+<section class="sheet mt-6 overflow-hidden" aria-labelledby="category-heading">
+  <div class="border-b border-rule px-5 py-4 sm:px-7">
+    <h2 id="category-heading" class="heading-display text-lg">Category budgets</h2>
+    <p class="mt-1 text-sm text-ink-soft">Set limits only where you want to keep an eye on spending.</p>
+  </div>
+  <ul>
+    <% rows.forEach((row) => { %>
+      <li class="grid gap-4 border-b border-rule px-5 py-4 last:border-0 sm:px-7 md:grid-cols-[1fr_320px] md:items-center">
+        <div>
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <span class="inline-flex items-center gap-2 font-medium"><span class="h-2.5 w-2.5 rounded-full <%= row.info.dot %>"></span><%= row.info.label %></span>
+            <span class="text-sm amount <%= row.status === 'over' ? 'font-semibold text-debit' : 'text-ink-soft' %>">
+              <%= money(row.spent) %><%= row.limit ? ` of ${money(row.limit)}` : ' spent' %>
+            </span>
+          </div>
+          <% if (row.limit) { %>
+            <div class="meter mt-2"><div class="meter-fill <%= statusColor[row.status] %>" data-width="<%= row.percent %>"></div></div>
+            <p class="mt-1.5 text-xs <%= row.status === 'over' ? 'text-debit' : row.status === 'warning' ? 'text-caution' : 'text-ink-soft' %>"><%= row.percent %>% used, <%= statusText(row) %></p>
+          <% } %>
+        </div>
+        <div>
+          <form action="/budgets" method="post" class="flex items-center gap-2">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="category" value="<%= row.key %>">
+            <label for="limit-<%= row.key %>" class="sr-only">Monthly limit for <%= row.info.label %></label>
+            <div class="relative flex-1">
+              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-ink-soft"><%= currencySymbol %></span>
+              <input id="limit-<%= row.key %>" name="limit" inputmode="decimal" required placeholder="No limit"
+                value="<%= row.limit ? minorToInput(row.limit).replace(/\.00$/, '') : '' %>"
+                class="field amount py-2 pl-8 <%= errors[row.key] ? 'field-invalid' : '' %>">
+            </div>
+            <button class="btn btn-quiet btn-sm py-2"><%= row.limit ? 'Update' : 'Set' %></button>
+          </form>
+          <% if (errors[row.key]) { %><p class="field-error"><%= errors[row.key] %></p><% } %>
+          <% if (row.limit) { %>
+            <form action="/budgets/<%= row.key %>" method="post" class="mt-1 text-right">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="_method" value="DELETE">
+              <button class="text-xs font-medium text-ink-soft underline underline-offset-4 hover:text-debit">Remove</button>
+            </form>
+          <% } %>
+        </div>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+<%- include('../partials/bottom') %>
